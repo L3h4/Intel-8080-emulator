@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <vector>
 
 
 
@@ -31,21 +32,25 @@ class I8080{
 
         //флаги
         struct{
-            uint8_t CY; //признак переноса
-            uint8_t pad1;
-            uint8_t P; //признак четности
-            uint8_t pad2;
-            uint8_t AC; //признак переноса из 3 разряда в 4
-            uint8_t pad3;
-            uint8_t Z; //признак нулевого результата
-            uint8_t S; //признак отрицательного результата
+            bool C; //признак переноса
+            bool P; //признак четности
+            bool A; //признак переноса из 3 разряда в 4
+            bool Z; //признак нулевого результата
+            bool S; //признак отрицательного результата
         }Flags;
 
         void step();
 
     private:
-       
-        bool use_clock;
+        //структура инструкция
+        struct INSTRUCTION
+        {
+            string name; //текстовое название операции
+            void (*operate)(uint8_t opcode) = nullptr; //указатель на обработчик операции
+            int cycles = 0; //количество тиков процессора которое занимает операция
+        };
+        //вектор инструкций длиной 255
+        std::vector<INSTRUCTION> lookup;
 
         void command();
 
