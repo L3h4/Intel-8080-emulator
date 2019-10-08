@@ -18,13 +18,15 @@ I8080 proc;
 void Basicclock(){
 	if (use_clock){
 		while(1){
+			proc.draw_debug();
 			usleep(1000000);
 			proc.step();
 		}
 	}
 	else{
 		while(1){
-			cin.get();
+			proc.draw_debug();
+			getchar();
 			proc.step();
 		}
 	}
@@ -61,6 +63,7 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
+	proc.load_code();
 	Basicclock();
 	return 0;
 }

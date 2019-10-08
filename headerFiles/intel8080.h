@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 
@@ -41,21 +42,26 @@ class I8080{
 
         void step();
 
+        void load_code();
+
+        void draw_debug();
+
     private:
         //структура инструкция
         struct INSTRUCTION
         {
-            string name; //текстовое название операции
-            void (*operate)(uint8_t opcode) = nullptr; //указатель на обработчик операции
+            std::string name; //текстовое название операции
+            void (I8080::*operate)(uint8_t opcode) = nullptr; //указатель на обработчик операции
             int cycles = 0; //количество тиков процессора которое занимает операция
         };
         //вектор инструкций длиной 255
         std::vector<INSTRUCTION> lookup;
 
-        void command();
+        uint clock_counter = 0;
+        uint cycles_counter = 0;
+        uint8_t current_opcode;
+        void clock(); //
 
-        void clock();
-        
+        //Обработчики команд
+        void NOP_op_handler(uint8_t opcode);
 };
-
-//void init( bool use_clock = true );
