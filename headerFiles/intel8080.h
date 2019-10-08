@@ -62,6 +62,9 @@ class I8080{
         uint8_t current_opcode;
         void clock(); //
 
+        std::string conarr[6]; //не работает, переписать!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        void CPU_cout(std::string text);
+
         //Обработчики команд
         void NOP_op_handler(uint8_t opcode);
 };

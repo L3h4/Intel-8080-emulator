@@ -19,7 +19,7 @@ void Basicclock(){
 	if (use_clock){
 		while(1){
 			proc.draw_debug();
-			usleep(1000000);
+			usleep(1100000);
 			proc.step();
 		}
 	}

@@ -1,6 +1,9 @@
 #include <iostream>
 #include <stdio.h>
-#include <iomanip>
+#include <unistd.h>
+#include <sys/ioctl.h> 
+
+
 
 using namespace std;
 
@@ -41,7 +44,7 @@ void draw_rect(int x, int y, int width, int height, string title = ""){
 	}
 
 	if(title != ""){
-		draw_text(x,y,title);
+		draw_text(x+1,y,title);
 	}
 }
 
@@ -49,9 +52,8 @@ void clear(){
     system("clear");
 }
 
-template< typename T >
-std::string to_hex( T i ){
-  std::stringstream stream;
-  stream << "0x" << std::setfill ('0') << std::setw(sizeof(T)*2) << std::hex << i;
-  return stream.str();
+winsize get_console_size(){
+	struct winsize size;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+	return size;
 }

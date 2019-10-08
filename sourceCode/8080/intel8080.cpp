@@ -32,16 +32,17 @@ void I8080::load_code(){
 }
 
 void I8080::draw_debug(){
+    int conwidth = get_console_size().ws_col;
+    int conheight = get_console_size().ws_row;
     clear();
     draw_rect(1,1,11,4,"FLAGS");
     draw_text(2,2,"C P A Z S");
     draw_text(2,3,"");
-    std::cout<<Flags.C<<" "<<Flags.P<<" "<<Flags.A<<" "<<Flags.Z<<" "<<Flags.S;
+    printf("%d %d %d %d %d", Flags.C, Flags.P, Flags.A, Flags.Z, Flags.S);
+    draw_rect(1,4,11,conheight-11,"REGISTERS");
+    
 
-    draw_rect(1,4,11,9,"REGISTERS");
-    draw_text(11,4,"╣");
-
-    A = 16;
+    //A = 16;
 
     draw_text(2,5,"A  ");
     printf("0x%02X",A);
@@ -61,7 +62,41 @@ void I8080::draw_debug(){
     draw_text(2,11,"L  ");
     printf("0x%02X",L);
 
-    draw_text(1,24,"#");
+    draw_text(2,12,"---------");
+
+    draw_text(2,13,"PC ");
+    printf("0x%04X",PC);
+
+    draw_text(2,14,"SP ");
+    printf("0x%04X",SP);
+
+    draw_text(2,15,"--INFO---");
+
+    draw_text(2,16,"CC ");
+    printf("0x%04X",clock_counter);
+
+    draw_text(2,17,"CO ");
+    printf("0x%02X",current_opcode);
+
+    draw_rect(1,conheight-8,conwidth,11,"CPU I/O");
+
+    for(int i = 6; i>0; i--){
+        draw_text(2,conheight-7+i,conarr[i]);
+    }
+
+    draw_rect(11,1,conwidth-10,conheight-8,"MEMORY");
+
+    draw_text(11,4,"╣");
+    draw_text(11,conheight-8,"╩");
+    draw_text(conwidth,conheight-8,"╣");
+    draw_text(11,1,"╦");
+    draw_text(1,4,"╠");
+    draw_text(1,conheight-8,"╠");
+
+    draw_text(1,conheight,"╚");
+    draw_text(conwidth,conheight,"╝");
+    
+    draw_text(2,conheight-1,"#");
 }
 
 void I8080::clock(){
@@ -82,10 +117,16 @@ void I8080::clock(){
     clock_counter++;
 }
 
-
+void I8080::CPU_cout(std::string text){
+    for (int i = 1; i < 6; i++)
+    {
+        conarr[i]=conarr[i-1];
+    }
+    conarr[0] = text;
+}
 
 //Обработчики команд
 
 void I8080::NOP_op_handler(uint8_t opcode){
-    std::cout<<"NOP!"<<std::endl;
+    CPU_cout(to_string(PC-1)+"NOP! executed\n");
 }
