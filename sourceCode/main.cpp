@@ -10,7 +10,7 @@ using namespace std;
 //
 bool use_clock = false;
 
-I8080 proc;
+I8080 proc(true);
 // 
 
 
@@ -18,14 +18,12 @@ I8080 proc;
 void Basicclock(){
 	if (use_clock){
 		while(1){
-			proc.draw_debug();
 			usleep(1100000);
 			proc.step();
 		}
 	}
 	else{
 		while(1){
-			proc.draw_debug();
 			getchar();
 			proc.step();
 		}

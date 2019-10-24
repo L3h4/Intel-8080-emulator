@@ -6,7 +6,7 @@
 
 class I8080{
     public:
-        I8080();
+        I8080(bool debug);
 
         //блок регистров общего назначения 
         uint8_t A; // аккумулятор
@@ -44,17 +44,25 @@ class I8080{
 
         void load_code();
 
-        void draw_debug();
+
 
     private:
+        bool debug;
+
+        void draw_debug_menu();
+        void draw_registers();
+        void draw_memory_data();
+        void draw_cpu_io();
+        
         //структура инструкция
         struct INSTRUCTION
         {
             std::string name; //текстовое название операции
             void (I8080::*operate)(uint8_t opcode) = nullptr; //указатель на обработчик операции
+            int size = 0; //размер команды в байтах
             int cycles = 0; //количество тиков процессора которое занимает операция
         };
-        //вектор инструкций длиной 255
+        //вектор инструкций длиной 256
         std::vector<INSTRUCTION> lookup;
 
         uint clock_counter = 0;
@@ -62,7 +70,7 @@ class I8080{
         uint8_t current_opcode;
         void clock(); //
 
-        std::string conarr[6]; //не работает, переписать!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        std::string conarr[6];
         void CPU_cout(std::string text);
 
         //Обработчики команд
