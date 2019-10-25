@@ -42,7 +42,7 @@ class I8080{
 
         void step();
 
-        void load_code();
+        void load_code(std::string name);
 
 
 
@@ -75,4 +75,9 @@ class I8080{
 
         //Обработчики команд
         void NOP_op_handler(uint8_t opcode);
+        void MOV_op_handler(uint8_t opcode);
+        void MATH_op_handler(uint8_t opcode);
+        void STACK_op_handler(uint8_t opcode);
+        void CONTROL_op_handler(uint8_t opcode);
+        void JMP_op_handler(uint8_t opcode);
 };

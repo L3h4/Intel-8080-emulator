@@ -1,6 +1,7 @@
 #include<iostream>
 #include <cstdint>
 #include <unistd.h>
+#include <stdio.h> 
 #include"../headerFiles/intel8080.h"
 
 using namespace std;
@@ -12,7 +13,12 @@ bool use_clock = false;
 
 I8080 proc(true);
 // 
-
+string GetCurrentWorkingDir() {
+  char buff[FILENAME_MAX];
+  getcwd( buff, FILENAME_MAX );
+  string current_working_dir(buff);
+  return current_working_dir;
+}
 
 //
 void Basicclock(){
@@ -37,6 +43,9 @@ void Basicclock(){
 */
 int main(int argc, char* argv[])
 {
+	//cout<<GetCurrentWorkingDir()<<endl;
+	//return 0;
+
 	if (argc>=2){
 		for (int i = 1; i < argc; i++)
 		{
@@ -59,9 +68,14 @@ int main(int argc, char* argv[])
 					use_clock = false;
 				}
 			}
+			else if (string(argv[i]) == "--loadRom" || string(argv[i]) == "-l"){
+				if(string(argv[i+1]) != ""){
+					proc.load_code(GetCurrentWorkingDir()+"/"+string(argv[i+1]));
+				}
+			}
 		}
 	}
-	proc.load_code();
+
 	Basicclock();
 	return 0;
 }

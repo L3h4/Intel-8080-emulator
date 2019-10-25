@@ -1,8 +1,9 @@
 #include <iostream>
 #include <cstdint>
 #include <unistd.h>
-#include <thread>
+#include <fstream>
 #include <stdio.h>
+#include <bits/stdc++.h> 
 #include "../../headerFiles/intel8080.h"	
 #include "../../headerFiles/RAM.h"
 #include "../../headerFiles/cdl.h"
@@ -14,27 +15,28 @@ I8080::I8080(bool debug){
     this->debug = debug;
     //
     using a = I8080;
-    // TODO: написать обработчики MOV MATH
-    //1*16 операций готово
+    // TODO: написать обработчики MOV MATH JMP STACK CONTROL
+    // сэт инструкций для Intel 8080 : http://pastraiser.com/cpu/i8080/i8080_opcodes.html
     lookup = {
         {"NOP", &a::NOP_op_handler, 1, 4}, {"LXI B,d16", &a::MOV_op_handler, 3, 10}, {"STAX B", &a::MOV_op_handler, 1, 7}, {"INX B", &a::MATH_op_handler, 1, 5}, {"INR B", &a::MATH_op_handler, 1, 5}, {"DCR B", &a::MATH_op_handler, 1, 5}, {"MVI B,d8", &a::MOV_op_handler, 2, 7}, {"RLC", &a::MATH_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"DAD B", &a::MATH_op_handler, 1, 10}, {"LDAX B", &a::MOV_op_handler, 1, 7}, {"DCX B", &a::MATH_op_handler, 1, 5}, {"INR C", &a::MATH_op_handler, 1, 5}, {"DCR C", &a::MATH_op_handler, 1, 5}, {"MVI C,d8", &a::MOV_op_handler, 2, 7}, {"RRC", &a::MATH_op_handler, 1, 4},
+        {"NOP", &a::NOP_op_handler, 1, 4}, {"LXI D,d16", &a::MOV_op_handler, 3, 10}, {"STAX D", &a::MOV_op_handler, 1, 7}, {"INX D", &a::MATH_op_handler, 1, 5}, {"INR D", &a::MATH_op_handler, 1, 5}, {"DCR D", &a::MATH_op_handler, 1, 5}, {"MVI D,d8", &a::MOV_op_handler, 2, 7}, {"RAL", &a::MATH_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"DAD D", &a::MATH_op_handler, 1, 10}, {"LDAX D", &a::MOV_op_handler, 1, 7}, {"DCX D", &a::MATH_op_handler, 1, 5}, {"INR E", &a::MATH_op_handler, 1, 5}, {"DCR E", &a::MATH_op_handler, 1, 5}, {"MVI E,d8", &a::MOV_op_handler, 2, 7}, {"RAR", &a::MATH_op_handler, 1, 4},
+        {"NOP", &a::NOP_op_handler, 1, 4}, {"LXI H,d16", &a::MOV_op_handler, 3, 10}, {"SHLD a16", &a::MOV_op_handler, 3, 16}, {"INX H", &a::MATH_op_handler, 1, 5}, {"INR H", &a::MATH_op_handler, 1, 5}, {"DCR H", &a::MATH_op_handler, 1, 5}, {"MVI H,d8", &a::MOV_op_handler, 2, 7}, {"DAA", &a::MATH_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"DAD H", &a::MATH_op_handler, 1, 10}, {"LHLD a16", &a::MOV_op_handler, 3, 16}, {"DCX H", &a::MATH_op_handler, 1, 5}, {"INR L", &a::MATH_op_handler, 1, 5}, {"DCR L", &a::MATH_op_handler, 1, 5}, {"MVI L,d8", &a::MOV_op_handler, 2, 7}, {"CMA", &a::MATH_op_handler, 1, 4},
+        {"NOP", &a::NOP_op_handler, 1, 4}, {"LXI SP,d16", &a::MOV_op_handler, 3, 10}, {"STA a16", &a::MOV_op_handler, 3, 13}, {"INX SP", &a::MATH_op_handler, 1, 5}, {"INR M", &a::MATH_op_handler, 1, 5}, {"DCR M", &a::MATH_op_handler, 1, 10}, {"MVI M,d8", &a::MOV_op_handler, 2, 10}, {"STC", &a::MATH_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"DAD SP", &a::MATH_op_handler, 1, 10}, {"LDA a16", &a::MOV_op_handler, 3, 13}, {"DCX SP", &a::MATH_op_handler, 1, 5}, {"INR A", &a::MATH_op_handler, 1, 5}, {"DCR A", &a::MATH_op_handler, 1, 5}, {"MVI A,d8", &a::MOV_op_handler, 2, 7}, {"CMC", &a::MATH_op_handler, 1, 4},
 
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
+        {"MOV B,B", &a::MOV_op_handler, 1, 5}, {"MOV B,C", &a::MOV_op_handler, 1, 5}, {"MOV B,D", &a::MOV_op_handler, 1, 5}, {"MOV B,E", &a::MOV_op_handler, 1, 5}, {"MOV B,H", &a::MOV_op_handler, 1, 5}, {"MOV B,L", &a::MOV_op_handler, 1, 5}, {"MOV B,M", &a::MOV_op_handler, 1, 7}, {"MOV B,A", &a::MOV_op_handler, 1, 5}, {"MOV C,B", &a::MOV_op_handler, 1, 5}, {"MOV C,C", &a::MOV_op_handler, 1, 5}, {"MOV C,D", &a::MOV_op_handler, 1, 5}, {"MOV C,E", &a::MOV_op_handler, 1, 5}, {"MOV C,H", &a::MOV_op_handler, 1, 5}, {"MOV C,L", &a::MOV_op_handler, 1, 5}, {"MOV C,M", &a::MOV_op_handler, 1, 7}, {"MOV C,A", &a::MOV_op_handler, 1, 5},
+        {"MOV D,B", &a::MOV_op_handler, 1, 5}, {"MOV D,C", &a::MOV_op_handler, 1, 5}, {"MOV D,D", &a::MOV_op_handler, 1, 5}, {"MOV D,E", &a::MOV_op_handler, 1, 5}, {"MOV D,H", &a::MOV_op_handler, 1, 5}, {"MOV D,L", &a::MOV_op_handler, 1, 5}, {"MOV D,M", &a::MOV_op_handler, 1, 7}, {"MOV D,A", &a::MOV_op_handler, 1, 5}, {"MOV E,B", &a::MOV_op_handler, 1, 5}, {"MOV E,C", &a::MOV_op_handler, 1, 5}, {"MOV E,D", &a::MOV_op_handler, 1, 5}, {"MOV E,E", &a::MOV_op_handler, 1, 5}, {"MOV E,H", &a::MOV_op_handler, 1, 5}, {"MOV E,L", &a::MOV_op_handler, 1, 5}, {"MOV E,M", &a::MOV_op_handler, 1, 7}, {"MOV E,A", &a::MOV_op_handler, 1, 5},
+        {"MOV H,B", &a::MOV_op_handler, 1, 5}, {"MOV H,C", &a::MOV_op_handler, 1, 5}, {"MOV H,D", &a::MOV_op_handler, 1, 5}, {"MOV H,E", &a::MOV_op_handler, 1, 5}, {"MOV H,H", &a::MOV_op_handler, 1, 5}, {"MOV H,L", &a::MOV_op_handler, 1, 5}, {"MOV H,M", &a::MOV_op_handler, 1, 7}, {"MOV L,A", &a::MOV_op_handler, 1, 5}, {"MOV L,B", &a::MOV_op_handler, 1, 5}, {"MOV L,C", &a::MOV_op_handler, 1, 5}, {"MOV L,D", &a::MOV_op_handler, 1, 5}, {"MOV L,E", &a::MOV_op_handler, 1, 5}, {"MOV L,H", &a::MOV_op_handler, 1, 5}, {"MOV L,L", &a::MOV_op_handler, 1, 5}, {"MOV L,M", &a::MOV_op_handler, 1, 7}, {"MOV L,A", &a::MOV_op_handler, 1, 5},
+        {"MOV M,B", &a::MOV_op_handler, 1, 7}, {"MOV M,C", &a::MOV_op_handler, 1, 7}, {"MOV M,D", &a::MOV_op_handler, 1, 7}, {"MOV M,E", &a::MOV_op_handler, 1, 7}, {"MOV M,H", &a::MOV_op_handler, 1, 7}, {"MOV M,L", &a::MOV_op_handler, 1, 7}, {"HLT", &a::CONTROL_op_handler, 1, 7}, {"MOV M,A", &a::MOV_op_handler, 1, 7}, {"MOV A,B", &a::MOV_op_handler, 1, 5}, {"MOV A,C", &a::MOV_op_handler, 1, 5}, {"MOV A,D", &a::MOV_op_handler, 1, 5}, {"MOV A,E", &a::MOV_op_handler, 1, 5}, {"MOV A,H", &a::MOV_op_handler, 1, 5}, {"MOV A,L", &a::MOV_op_handler, 1, 5}, {"MOV A,M", &a::MOV_op_handler, 1, 7}, {"MOV A,A", &a::MOV_op_handler, 1, 5},
+        
+        {"ADD B", &a::MATH_op_handler, 1, 4}, {"ADD C", &a::MATH_op_handler, 1, 4}, {"ADD D", &a::MATH_op_handler, 1, 4}, {"ADD E", &a::MATH_op_handler, 1, 4}, {"ADD H", &a::MATH_op_handler, 1, 4}, {"ADD L", &a::MATH_op_handler, 1, 4}, {"ADD M", &a::MATH_op_handler, 1, 7}, {"ADD A", &a::MATH_op_handler, 1, 4}, {"ADC B", &a::MATH_op_handler, 1, 4}, {"ADC C", &a::MATH_op_handler, 1, 4}, {"ADC D", &a::MATH_op_handler, 1, 4}, {"ADC E", &a::MATH_op_handler, 1, 4}, {"ADC H", &a::MATH_op_handler, 1, 4}, {"ADC L", &a::MATH_op_handler, 1, 4}, {"ADC M", &a::MATH_op_handler, 1, 7}, {"ADC A", &a::MATH_op_handler, 1, 4},
+        {"SUB B", &a::MATH_op_handler, 1, 4}, {"SUB C", &a::MATH_op_handler, 1, 4}, {"SUB D", &a::MATH_op_handler, 1, 4}, {"SUB E", &a::MATH_op_handler, 1, 4}, {"SUB H", &a::MATH_op_handler, 1, 4}, {"SUB L", &a::MATH_op_handler, 1, 4}, {"SUB M", &a::MATH_op_handler, 1, 7}, {"SUB A", &a::MATH_op_handler, 1, 4}, {"SBB B", &a::MATH_op_handler, 1, 4}, {"SBB C", &a::MATH_op_handler, 1, 4}, {"SBB D", &a::MATH_op_handler, 1, 4}, {"SBB E", &a::MATH_op_handler, 1, 4}, {"SBB H", &a::MATH_op_handler, 1, 4}, {"SBB L", &a::MATH_op_handler, 1, 4}, {"SBB M", &a::MATH_op_handler, 1, 7}, {"SBB A", &a::MATH_op_handler, 1, 4},
+        {"ANA B", &a::MATH_op_handler, 1, 4}, {"ANA C", &a::MATH_op_handler, 1, 4}, {"ANA D", &a::MATH_op_handler, 1, 4}, {"ANA E", &a::MATH_op_handler, 1, 4}, {"ANA H", &a::MATH_op_handler, 1, 4}, {"ANA L", &a::MATH_op_handler, 1, 4}, {"ANA M", &a::MATH_op_handler, 1, 7}, {"ANA A", &a::MATH_op_handler, 1, 4}, {"XRA B", &a::MATH_op_handler, 1, 4}, {"XRA C", &a::MATH_op_handler, 1, 4}, {"XRA D", &a::MATH_op_handler, 1, 4}, {"XRA E", &a::MATH_op_handler, 1, 4}, {"XRA H", &a::MATH_op_handler, 1, 4}, {"XRA L", &a::MATH_op_handler, 1, 4}, {"XRA M", &a::MATH_op_handler, 1, 7}, {"XRA A", &a::MATH_op_handler, 1, 4},
+        {"ORA B", &a::MATH_op_handler, 1, 4}, {"ORA C", &a::MATH_op_handler, 1, 4}, {"ORA D", &a::MATH_op_handler, 1, 4}, {"ORA E", &a::MATH_op_handler, 1, 4}, {"ORA H", &a::MATH_op_handler, 1, 4}, {"ORA L", &a::MATH_op_handler, 1, 4}, {"ORA M", &a::MATH_op_handler, 1, 7}, {"ORA A", &a::MATH_op_handler, 1, 4}, {"CMP B", &a::MATH_op_handler, 1, 4}, {"CMP C", &a::MATH_op_handler, 1, 4}, {"CMP D", &a::MATH_op_handler, 1, 4}, {"CMP E", &a::MATH_op_handler, 1, 4}, {"CMP H", &a::MATH_op_handler, 1, 4}, {"CMP L", &a::MATH_op_handler, 1, 4}, {"CMP M", &a::MATH_op_handler, 1, 7}, {"CMP A", &a::MATH_op_handler, 1, 4},
 
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
-        {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4}, {"NOP", &a::NOP_op_handler, 1, 4},
+        {"RNZ", &a::JMP_op_handler, 1, 5}, {"POP B", &a::STACK_op_handler, 1, 10}, {"JNZ a16", &a::JMP_op_handler, 3, 10}, {"JMP a16", &a::JMP_op_handler, 3, 10}, {"CNZ a16", &a::JMP_op_handler, 3, 11}, {"PUSH B", &a::STACK_op_handler, 1, 11}, {"ADI d8", &a::MATH_op_handler, 2, 7}, {"RST 0", &a::JMP_op_handler, 1, 11}, {"RZ", &a::JMP_op_handler, 1, 5}, {"RET", &a::JMP_op_handler, 1, 10}, {"JZ a16", &a::JMP_op_handler, 3, 10}, {"JMP a16", &a::JMP_op_handler, 3, 10}, {"CZ a16", &a::JMP_op_handler, 3, 11}, {"CALL a16", &a::JMP_op_handler, 3, 17}, {"ACI d8", &a::MATH_op_handler, 2, 7}, {"RST 1", &a::JMP_op_handler, 1, 11},
+        {"RNC", &a::JMP_op_handler, 1, 5}, {"POP D", &a::STACK_op_handler, 1, 10}, {"JNC a16", &a::JMP_op_handler, 3, 10}, {"OUT d8", &a::CONTROL_op_handler, 2, 10}, {"CNC a16", &a::JMP_op_handler, 3, 11}, {"PUSH D", &a::STACK_op_handler, 1, 11}, {"SUI d8", &a::MATH_op_handler, 2, 7}, {"RST 2", &a::JMP_op_handler, 1, 11}, {"RC", &a::JMP_op_handler, 1, 5}, {"RET", &a::JMP_op_handler, 1, 10}, {"JC a16", &a::JMP_op_handler, 3, 10}, {"IN d8", &a::CONTROL_op_handler, 2, 10}, {"CC a16", &a::JMP_op_handler, 3, 11}, {"CALL a16", &a::JMP_op_handler, 3, 17}, {"SBI d8", &a::MATH_op_handler, 2, 7}, {"RST 3", &a::JMP_op_handler, 1, 11},
+        {"RPO", &a::JMP_op_handler, 1, 5}, {"POP H", &a::STACK_op_handler, 1, 10}, {"JPO a16", &a::JMP_op_handler, 3, 10}, {"XTHL", &a::STACK_op_handler, 1, 18}, {"CPO a16", &a::JMP_op_handler, 3, 11}, {"PUSH H", &a::STACK_op_handler, 1, 11}, {"ANI d8", &a::MATH_op_handler, 2, 7}, {"RST 4", &a::JMP_op_handler, 1, 11}, {"RPE", &a::JMP_op_handler, 1, 5}, {"PCHL", &a::JMP_op_handler, 1, 5}, {"JPE a16", &a::JMP_op_handler, 3, 10}, {"XCHG", &a::STACK_op_handler, 1, 5}, {"CPE a16", &a::JMP_op_handler, 3, 11}, {"CALL a16", &a::JMP_op_handler, 3, 17}, {"XRI d8", &a::MATH_op_handler, 2, 7}, {"RST 5", &a::JMP_op_handler, 1, 11},
+        {"RP", &a::JMP_op_handler, 1, 5}, {"POP PSW", &a::STACK_op_handler, 1, 10}, {"JP a16", &a::JMP_op_handler, 3, 10}, {"DI", &a::CONTROL_op_handler, 1, 4}, {"CP a16", &a::JMP_op_handler, 3, 11}, {"PUSH PSW", &a::STACK_op_handler, 1, 11}, {"ORI d8", &a::MATH_op_handler, 2, 7}, {"RST 6", &a::JMP_op_handler, 1, 11}, {"RM", &a::JMP_op_handler, 1, 5}, {"SPHL", &a::STACK_op_handler, 1, 5}, {"JE a16", &a::JMP_op_handler, 3, 10}, {"EI", &a::CONTROL_op_handler, 1, 4}, {"CM a16", &a::JMP_op_handler, 3, 11}, {"CALL a16", &a::JMP_op_handler, 3, 17}, {"CPI d8", &a::MATH_op_handler, 2, 7}, {"RST 7", &a::JMP_op_handler, 1, 11},
     };
 
     if(debug){
@@ -49,16 +51,29 @@ void I8080::step(){
     clock();
 }
 
-void I8080::load_code(){
-    writeMemory(0x0000,0x00);
-    writeMemory(0x0001,0x00);
-    writeMemory(0x0002,0x00);
-    writeMemory(0x0003,0x00);
-    writeMemory(0x0004,0x00);
-    writeMemory(0x0005,0x00);
-    writeMemory(0x0006,0x00);
-    writeMemory(0x0007,0x00);
-    writeMemory(0x0008,0xAC);
+void I8080::load_code(string name){
+
+    char _name[name.length()];
+    strcpy(_name, name.c_str());
+
+    ifstream inFile; 
+	size_t size = 0;
+	inFile.open(_name, ios::in|ios::binary|ios::ate);
+	if(inFile.is_open()) {
+        
+		char* oData = 0;
+
+		inFile.seekg(0, ios::end);
+		size = inFile.tellg();
+		inFile.seekg(0, ios::beg);
+
+		oData = new char[size+1];
+		inFile.read(oData, size);
+		oData[size] = '\0';
+
+        for(int i = 0; i<size; i++)
+                writeMemory(i, oData[i]);
+	}
     draw_memory_data();
 }
 
@@ -193,5 +208,25 @@ void I8080::CPU_cout(std::string text){
 //Обработчики команд
 
 void I8080::NOP_op_handler(uint8_t opcode){
-    CPU_cout(to_string(PC-1)+" NOP! executed\n");
+    CPU_cout(to_string(PC)+" "+lookup[opcode].name+" executed!");
+}
+
+void I8080::MOV_op_handler(uint8_t opcode){
+    CPU_cout(to_string(PC)+" "+lookup[opcode].name+" executed!");
+}
+
+void I8080::MATH_op_handler(uint8_t opcode){
+    CPU_cout(to_string(PC)+" "+lookup[opcode].name+" executed!");
+}
+
+void I8080::CONTROL_op_handler(uint8_t opcode){
+    CPU_cout(to_string(PC)+" "+lookup[opcode].name+" executed!");
+}
+
+void I8080::JMP_op_handler(uint8_t opcode){
+    CPU_cout(to_string(PC)+" "+lookup[opcode].name+" executed!");
+}
+
+void I8080::STACK_op_handler(uint8_t opcode){
+    CPU_cout(to_string(PC)+" "+lookup[opcode].name+" executed!");
 }
